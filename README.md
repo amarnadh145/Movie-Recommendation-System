@@ -14,8 +14,9 @@ interest by using content based recommender system.
 
 ## Requirements
 1.Streamlit Framework
-2.Transformers
-3.Torch
+2.Pickle
+3.Count vectorizer
+4.Cosine Similarity
 
 ## Build
 Run the code of model.txt file in a notebook to build the model which gives pickle files named 'movies.pkl',popularity.pkl',similarity.pkl' after training.
