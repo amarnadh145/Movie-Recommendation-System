@@ -1,0 +1,224 @@
+#importing pandas and numpy
+import numpy as np
+import pandas as pd
+
+#load the movies.csv and credits.csv in movies and credits dataframe
+movies = pd.read_csv('tmdb_200_movies.csv')
+credits = pd.read_csv('tmdb_200_credits.csv')
+
+#view the view the movies and credits dataframe
+movies.head()
+credits.head()
+
+#merging the movies and credits
+movies = movies.merge(credits,on='title’)
+
+#taking only some attributes into the table or dataset
+movies=movies[['movie_id','user_id','original_title','original_language','genres','overview','release_date','vote_average','vote_count','cast','crew’]]
+movies.info()
+
+#checking if any null values are in my movies.csv dataset
+movies.isnull().sum()
+movies.duplicated().sum()
+
+#importing abstract module
+movies.iloc[0].genres
+import ast
+ast.literal_eval('[{"id": 28, "name": "Action"}, {"id": 12, "name": "Adventure"}, {"id": 14,"name": "Fantasy"}, {"id": 878, "name": "Science Fiction"}]’)
+
+#extracting the genres from genres feature
+def convert(obj):
+    L=[]
+    counter = 0
+    for i in ast.literal_eval(obj):
+        if counter != 1:
+            L.append(i['name'])
+            counter+=1
+        else:
+            break
+    return L
+movies['genres'].apply(convert)
+movies['genres']=movies['genres'].apply(convert)
+
+#extracting the cast(actor) from cast feature
+def convert3(obj):
+    L=[]
+    counter = 0
+    for i in ast.literal_eval(obj):
+        if counter != 1:
+            L.append(i['name'])
+            counter+=1
+        else:
+            break
+    return L
+movies['cast'].apply(convert3)
+movies['cast']=movies['cast'].apply(convert3)
+
+#extracting the crew(director) from the crew feature
+def fetch_director(obj):
+    L=[]
+    for i in ast.literal_eval(obj):
+        if i['job']=='Director':
+            L.append(i['name'])
+            break
+    return L
+movies['crew'].apply(fetch_director)
+movies['crew']=movies['crew'].apply(fetch_director
+
+#overview is converted into list
+movies['overview']=movies['overview'].apply(lambda x:str(x).split())
+
+#new attribute tags is created in movies.csv by combing overview, genres,cast, crew
+movies['tags']=movies['overview']+movies['genres']+movies['cast']+movies['crew’]
+
+#cast, crew, genres, overview, tags are converted from list to string
+movies['cast']=movies['cast'].apply(lambda x:" ".join(x))
+movies['crew']=movies['crew'].apply(lambda x:" ".join(x))
+movies['genres']=movies['genres'].apply(lambda x:" ".join(x))
+movies['overview']=movies['overview'].apply(lambda x:" ".join(x))
+movies['tags']=movies['tags'].apply(lambda x:" ".join(x))
+movies.head()
+
+#create new dataframe and view it
+movies['tags']=movies['tags'].apply(lambda x:x.lower())
+new_df=movies[['movie_id','user_id','original_title','original_language','genres','overview','rel
+ease_date','vote_average','cast','crew','tags']]
+new_df
+
+#importing countvectorizer from scikit-learn
+from sklearn.feature_extraction.text import CountVectorizer
+
+#removing stopwords and converting the tags into vectors
+cv=CountVectorizer(max_features=200,stop_words='english')
+cv.fit_transform(new_df['tags']).toarray()
+cv.fit_transform(new_df['tags']).toarray().shape
+vectors=cv.fit_transform(new_df['tags']).toarray()
+vectors
+len(cv.get_feature_names())
+cv.get_feature_names()
+
+#importing nltk
+import nltk
+
+#importing PorterStemmer from nltk
+from nltk.stem.porter import PorterStemmer
+
+#Stemming
+ps=PorterStemmer()
+def stem(text):
+    y=[]
+    for i in text.split():
+        y.append(ps.stem(i))
+    return " ".join(y)
+ps.stem('loved’)
+new_df['tags'].apply(stem)
+new_df['tags']=new_df['tags'].apply(stem)
+
+
+from sklearn.feature_extraction.text import CountVectorizer
+cv=CountVectorizer(max_features=200,stop_words='english')
+cv.fit_transform(new_df['tags']).toarray()
+vectors=cv.fit_transform(new_df['tags']).toarray()
+vectors
+cv.get_feature_names()
+
+#importing cosine similarity from scikit-learn
+from sklearn.metrics.pairwise import cosine_similarity
+
+#Finding similarity between the vectors
+cosine_similarity(vectors)
+similarity=cosine_similarity(vectors)
+similarity[0]
+new_df['original_title'] == 'Avatar’
+new_df[new_df['original_title'] == 'Avatar']
+new_df[new_df['original_title'] == 'Avatar'].index
+similarity[0]
+
+#sorting and enumerating the similarity
+sorted(similarity[0])
+sorted(similarity[0])[-10:-1]
+sorted(similarity[0],reverse=True)
+enumerate(similarity[0])
+list(enumerate(similarity[0]))
+sorted(list(enumerate(similarity[0])),reverse=True)
+
+#popularity based recommender system
+
+C= movies['vote_average'].mean()
+m= movies['vote_count'].quantile(0.5)
+q_movies = movies.loc[movies['vote_count'] >= m]
+q_movies.shape
+
+def weighted_rating(x, m=m, C=C):
+    v = x['vote_count']
+    R = x['vote_average']
+    return (v/(v+m) * R) + (m/(m+v) * C)
+q_movies['score'] = q_movies.apply(weighted_rating, axis=1)
+
+#Sorting movies based on score calculated above
+q_movies = q_movies.sort_values('score', ascending=False)
+
+#Printing the top 10 movies
+q_movies[['original_title', 'vote_count', 'vote_average','score']].reset_index(drop=True).head(10)
+q_movies.original_title
+
+
+#recommending the movies based on the original_title
+def recommend(movie):
+    movie_index=new_df[new_df['original_title'] == movie].index[0]
+    distances=similarity[movie_index]
+    movies_list=sorted(list(enumerate(distances)),reverse=True,key=lambda x:x[1])[1:6]
+    for i in movies_list:
+        print(new_df.iloc[i[0]].original_title)
+recommend('Spider-Man’)
+
+#recommending the movies based on the cast
+def recommend(movie):
+    recommended_movie_names = []
+    dex = []
+    for i, s in enumerate(movies['cast']):
+        if movie in s:
+            cast_index = i
+            m = (movies.iloc[i].original_title)
+            dex.append(m)
+    n = len(dex[0:5])
+    idex = '\n'.join(dex[0:5])
+    distances = similarity[cast_index]
+    movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6 -n]
+    for i in movies_list:
+        idex = idex + '\n' + (movies.iloc[i[0]].original_title)
+    recommended_movie_names = idex.split('\n')
+    return recommended_movie_names
+recommend('Johnny Depp')
+
+#recommending the movies based on the crew
+def recommend(movie):
+    recommended_movie_names = []
+    dex = []
+    for i, s in enumerate(movies['crew']):
+        if movie in s:
+            crew_index = i
+            m = (movies.iloc[i].original_title)
+            dex.append(m)
+    n = len(dex[0:5])
+    idex = '\n'.join(dex[0:5])
+    distances = similarity[crew_index]
+    movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6 -n]
+    for i in movies_list:
+        idex = idex + '\n' + (movies.iloc[i[0]].original_title)
+    recommended_movie_names = idex.split('\n')
+    return recommended_movie_names
+recommend('James Cameron’)
+def icst(the_list, substring):
+    for i, s in enumerate(the_list):
+        if substring in s:
+            return i
+    return -1
+
+#importing pickle
+import pickle
+
+#dump the new_df, similarity, q_movies into movies.pkl, similarity.pkl,popular.pkl
+pickle.dump(new_df,open('movies.pkl','wb'))
+pickle.dump(similarity,open('similarity.pkl','wb'))
+pickle.dump(q_movies,open('popular.pkl','wb'))
